@@ -15,7 +15,7 @@ class Perceptron:
                  step_bipolar_threshold=0,
                  identity_a=1,
                  parametric_a=0.1) -> None:
-        self.id = 'P/?/?'
+        self.__id = 'P/?/?'
         self.activation_function = activation_function
         self.__inner_weight = inner_weight
         self.__weights: list = [self.__inner_weight]
@@ -28,6 +28,14 @@ class Perceptron:
         self.__parametric_a = parametric_a
         self.left_neightbours: 'list[Perceptron]' = [self.inner_neighbour]
         self.validate()
+
+    @property
+    def id(self):
+        return self.__id
+
+    @id.setter
+    def id(self, value):
+        raise Exception("Cannot set id manually")
 
     @property
     def output(self):
@@ -53,9 +61,8 @@ class Perceptron:
         if len(value) != len(self.__weights):
             raise ValueError("Mismatch between size of weights."
                              f"Prev: {len(self.__weights)} | New: {len(value)}")
-        # if len(value) != len(self.left_neightbours):
-        #     raise ValueError("Mismatch between size of weights and neighbours."
-        #                      f"Prev: {len(self.left_neightbours)} | New: {len(value)}")
+        if not all(isinstance(item, (int, float)) for item in value):
+            raise ValueError(f"Incorrect weights. {self.id} | {value}")
         self.__weights = value
         self.__inner_weight = value[0]
         self.previous_weights.append(value)
@@ -80,6 +87,10 @@ class Perceptron:
             raise ValueError("Neighbour is not instance "
                              "of Perceptron or Network Input. "
                              f"Instead {type(neightbour)}")
+        if neightbour in self.left_neightbours:
+            raise ValueError("Neighbour already exists")
+        if neightbour == self:
+            raise ValueError("Cannot add self as neighbour")
         self.left_neightbours.append(neightbour)
         self.__add_weight(weight)
 
@@ -97,7 +108,7 @@ class Perceptron:
         return sum
 
     def set_id(self, layer: int, position: int) -> None:
-        self.id: str = f'P/{layer}/{position}'
+        self.__id: str = f'P/{layer}/{position}'
         self.inner_neighbour.set_id(layer, position)
 
     def calc_step_unipolar(self) -> Literal[1, 0]:
@@ -163,10 +174,10 @@ class Perceptron:
         obj_dict['activation-function'] = self.activation_function
         obj_dict['weights'] = self.__weights
         obj_dict['inner-weight'] = self.__inner_weight
-        obj_dict['left-side-U'] = len(self.left_neightbours) - 1
+        obj_dict['left-side-U'] = [item.output for item in self.left_neightbours[1:]]
         obj_dict['inner-U'] = self.inner_neighbour.output
         obj_dict['U-id'] = [item.id for item in self.left_neightbours]
         return obj_dict
 
     def __repr__(self) -> str:
-        return self.id
+        return self.__id

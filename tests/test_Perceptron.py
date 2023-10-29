@@ -51,17 +51,38 @@ def test_weights():
         p.weights = "a"
     with pytest.raises(ValueError):
         p.weights = 1
-    # with pytest.raises(ValueError):
-    #     p.weights = [1, "a"]
-    p.weights = [1, 'a']
+    with pytest.raises(ValueError):
+        p.weights = [1, "a"]
     # do ogarnięcia
 
     for i in range(100):
         p.weights = [i, i + 1]
-    
+
     assert p.weights == [99, 100]
     assert len(p.previous_weights) == 50
     assert p.previous_weights[0] == [50, 51]
+
+
+def test_add_neighbour():
+    p = Perceptron(ActivationFunctions.IDENTITY)
+    p2 = Perceptron(ActivationFunctions.IDENTITY)
+    p3 = Perceptron(ActivationFunctions.IDENTITY)
+    p.add_neightbour(p2)
+    assert p.left_neightbours == [p.inner_neighbour, p2]
+    p.add_neightbour(p3)
+    assert p.left_neightbours == [p.inner_neighbour, p2, p3]
+    with pytest.raises(ValueError):
+        p.add_neightbour(p)
+    with pytest.raises(ValueError):
+        p.add_neightbour(p2)
+    with pytest.raises(ValueError):
+        p.add_neightbour(p3)
+    with pytest.raises(ValueError):
+        p.add_neightbour(1)
+    with pytest.raises(ValueError):
+        p.add_neightbour("a")
+    with pytest.raises(ValueError):
+        p.add_neightbour([1, 2, 3])
 
 
 def test_get_output_identity():
@@ -73,6 +94,7 @@ def test_get_output_identity():
     p2.output = 2
     p3.output = 3
     # 1 + 2*2 + 3*3 = 14
+    # identity(14) = 14
     assert p1.get_output() == 14
     assert p1.get_output() == p1.calc_identity()
 
@@ -86,11 +108,14 @@ def test_get_output_relu():
     p2.output = -1
     p3.output = 3
     # 1 + 2*-1 + 3*3 = 8
+    # relu(8) = 8
     assert p1.get_output() == 8
     p2.output = 1
     p3.output = 0.6
-    p1.weights = [-0.1, 0.7, 0.4]
-    assert p1.get_output() == 0.84
+    p1.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # relu(-0.38) = 0
+    assert p1.get_output() == 0
     assert p1.get_output() == p1.calc_relu()
 
 
@@ -103,6 +128,7 @@ def test_get_output_sigmoid_bipolar():
     p2.output = -1
     p3.output = 3
     # 1 + 2*-1 + 3*3 = 8
+    # sigmoid_bipolar(8) = -0.9997532108480275
     assert p1.get_output() == -0.9997532108480275
     p2.output = 1
     p3.output = 1
@@ -128,7 +154,17 @@ def test_get_output_step_unipolar():
 
 
 def test_set_output():
-    pass
+    p = Perceptron(ActivationFunctions.IDENTITY)
+    with pytest.raises(ValueError):
+        p.set_output("a")
+    with pytest.raises(ValueError):
+        p.set_output([1, 2, 3])
+    p.set_output(0.3)
+    assert p.output == 0.3
+    p.set_output(1)
+    assert p.output == 1
+    p.set_output(0)
+    assert p.previous_outputs == [0.3, 1, 0]
 
 
 def test_set_neighbours():
@@ -146,13 +182,65 @@ def test_set_neighbours():
         p.set_neighbours([p2])
 
 
-def test_add_neightbour():
-    pass
-
-
 def test_set_id():
-    pass
+    p = Perceptron(ActivationFunctions.IDENTITY)
+    with pytest.raises(Exception):
+        p.id = "a"
+    with pytest.raises(Exception):
+        p.id = [1, 2, 3]
+    with pytest.raises(TypeError):
+        p.set_id(-1)
+    p.set_id(1, 1)
+    assert p.id == 'P/1/1'
+    p.set_id(3, 8)
+    assert p.id == 'P/3/8'
 
 
 def test_get_dict():
-    pass
+    p = Perceptron(ActivationFunctions.IDENTITY)
+    p2 = Perceptron(ActivationFunctions.IDENTITY)
+    p3 = Perceptron(ActivationFunctions.IDENTITY)
+    p.set_neighbours([p2, p3])
+    p.set_id(0, 0)
+    p2.set_id(1, 1)
+    p3.set_id(2, 2)
+    p.weights = [1, 2, 3]
+    p2.output = 2
+    p3.output = 3
+    # 1 + 2*2 + 3*3 = 14
+    # identity(14) = 14
+    assert p.get_dict() == {
+        'id': 'P/0/0',
+        'output': 0,
+        'activation-function': ActivationFunctions.IDENTITY,
+        'weights': [1, 2, 3],
+        'inner-weight': 1,
+        'left-side-U': [2, 3],
+        'inner-U': 1,
+        'U-id': ['I/0/0', 'P/1/1', 'P/2/2']
+    }
+    p2.output = 1
+    p3.output = 0.6
+    p.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # relu(-0.38) = 0
+    p.set_output(p.get_output())
+    assert p.get_dict() == {
+        'id': 'P/0/0',
+        'output': -0.5599999999999999,
+        'activation-function': ActivationFunctions.IDENTITY,
+        'weights': [-0.1, -0.7, 0.4],
+        'inner-weight': -0.1,
+        'left-side-U': [1, 0.6],
+        'inner-U': 1,
+        'U-id': ['I/0/0', 'P/1/1', 'P/2/2']
+    }
+
+
+def test_repr():
+    p = Perceptron(ActivationFunctions.IDENTITY)
+    assert repr(p) == "P/?/?"
+    p.set_id(0, 0)
+    assert repr(p) == "P/0/0"
+    p.set_id(1, 1)
+    assert repr(p) == "P/1/1"

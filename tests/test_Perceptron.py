@@ -36,7 +36,7 @@ def test_output():
 
 def test_incorrect_weights():
     p = Perceptron(ActivationFunctions.IDENTITY)
-    p2 = Perceptron(ActivationFunctions.IDENTITY)
+    p2 = Perceptron(ActivationFunctions.RELU)
     with pytest.raises(ValueError):
         p.weights = [1, 2, 3]
 

@@ -34,7 +34,7 @@ def test_output():
     assert p.previous_outputs[49] == 99
 
 
-def test_incorrect_weights():
+def test_weights():
     p = Perceptron(ActivationFunctions.IDENTITY)
     p2 = Perceptron(ActivationFunctions.RELU)
     with pytest.raises(ValueError):
@@ -44,11 +44,24 @@ def test_incorrect_weights():
     assert p.weights == [1]
     p.set_neighbours([p2])
     p.weights = [1, 2]
+    with pytest.raises(ValueError):
+        p.weights = [1, 2, 3]
     assert p.weights == [1, 2]
     with pytest.raises(ValueError):
         p.weights = "a"
     with pytest.raises(ValueError):
         p.weights = 1
+    # with pytest.raises(ValueError):
+    #     p.weights = [1, "a"]
+    p.weights = [1, 'a']
+    # do ogarnięcia
+
+    for i in range(100):
+        p.weights = [i, i + 1]
+    
+    assert p.weights == [99, 100]
+    assert len(p.previous_weights) == 50
+    assert p.previous_weights[0] == [50, 51]
 
 
 def test_get_output_identity():
@@ -119,7 +132,18 @@ def test_set_output():
 
 
 def test_set_neighbours():
-    pass
+    p = Perceptron(ActivationFunctions.IDENTITY)
+    p2 = Perceptron(ActivationFunctions.IDENTITY)
+    p3 = Perceptron(ActivationFunctions.IDENTITY)
+    p.set_neighbours([p2, p3])
+    assert p.left_neightbours == [p.inner_neighbour, p2, p3]
+    with pytest.raises(ValueError):
+        p.set_neighbours([p2, p3, p])
+    # not sure why it's protected from setting the same perceptron as neighbour twice
+    with pytest.raises(ValueError):
+        p.set_neighbours([p2, p2])
+    with pytest.raises(ValueError):
+        p.set_neighbours([p2])
 
 
 def test_add_neightbour():

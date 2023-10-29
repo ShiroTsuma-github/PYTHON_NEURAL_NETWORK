@@ -53,9 +53,9 @@ class Perceptron:
         if len(value) != len(self.__weights):
             raise ValueError("Mismatch between size of weights."
                              f"Prev: {len(self.__weights)} | New: {len(value)}")
-        if len(value) != len(self.left_neightbours):
-            raise ValueError("Mismatch between size of weights and neighbours."
-                             f"Prev: {len(self.left_neightbours)} | New: {len(value)}")
+        # if len(value) != len(self.left_neightbours):
+        #     raise ValueError("Mismatch between size of weights and neighbours."
+        #                      f"Prev: {len(self.left_neightbours)} | New: {len(value)}")
         self.__weights = value
         self.__inner_weight = value[0]
         self.previous_weights.append(value)

@@ -50,6 +50,7 @@ def test_incorrect_weights():
     with pytest.raises(ValueError):
         p.weights = 1
 
+
 def test_get_output_identity():
     p1 = Perceptron(ActivationFunctions.IDENTITY)
     p2 = Perceptron(ActivationFunctions.IDENTITY)

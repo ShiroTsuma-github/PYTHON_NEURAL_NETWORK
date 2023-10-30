@@ -161,6 +161,10 @@ class Perceptron:
             return self.calc_step_bipolar(self.__step_bipolar_threshold)
         elif self.activation_function == ActivationFunctions.STEP_UNIPOLAR:
             return self.calc_step_unipolar()
+        elif self.activation_function == ActivationFunctions.RELU_LEAKY:
+            return self.calc_relu_leaky()
+        elif self.activation_function == ActivationFunctions.RELU_PARAMETRIC:
+            return self.calc_relu_parametric()
         else:
             raise ValueError("Could not match activation function")
 

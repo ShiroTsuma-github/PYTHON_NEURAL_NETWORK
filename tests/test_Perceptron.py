@@ -119,6 +119,76 @@ def test_get_output_relu():
     assert p1.get_output() == p1.calc_relu()
 
 
+def test_get_output_relu_leaky():
+    p1 = Perceptron(ActivationFunctions.RELU_LEAKY)
+    p2 = Perceptron(ActivationFunctions.RELU_LEAKY)
+    p3 = Perceptron(ActivationFunctions.RELU_LEAKY)
+    p1.set_neighbours([p2, p3])
+    p1.weights = [1, 2, 3]
+    p2.output = -1
+    p3.output = 3
+    # 1 + 2*-1 + 3*3 = 8
+    # relu_leaky(8) = 8
+    assert p1.get_output() == 8
+    p2.output = 1
+    p3.output = 0.6
+    p1.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.056
+    # relu_leaky(-0.38) = -0.038
+    assert p1.get_output() == -0.055999999999999994
+    assert p1.get_output() == p1.calc_relu_leaky()
+    p2.output = -1
+    p3.output = -3
+    p1.weights = [1, 2, 3]
+    # 1 - 2 - 9 = -10
+    # relu_leaky(-10) = -1 ( 0.1 * -10 = -1) (NISKIE A)
+    assert p1.get_output() == -1
+    assert p1.get_output() == p1.calc_relu_leaky()
+
+
+def test_incorrect_activation_function():
+    p = Perceptron('abc')
+    with pytest.raises(ValueError):
+        p.get_output()
+    p = Perceptron([1, 2, 3])
+    with pytest.raises(ValueError):
+        p.get_output()
+
+
+def test_get_output_relu_parametric():
+    p1 = Perceptron(ActivationFunctions.RELU_PARAMETRIC)
+    p2 = Perceptron(ActivationFunctions.RELU_PARAMETRIC)
+    p3 = Perceptron(ActivationFunctions.RELU_PARAMETRIC)
+    p1.set_neighbours([p2, p3])
+    p1.weights = [1, 2, 3]
+    p2.output = -1
+    p3.output = 3
+    # 1 + 2*-1 + 3*3 = 8
+    # relu_parametric(8) = 8
+    assert p1.get_output() == 8
+    p2.output = 1
+    p3.output = 0.6
+    p1.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # relu_parametric(-0.38) = -0.038
+    assert p1.get_output() == -0.055999999999999994
+    assert p1.get_output() == p1.calc_relu_parametric()
+    p2.output = -1
+    p3.output = -3
+    p1.weights = [1, 2, 3]
+    # 1 - 2 - 9 = -10
+    # relu_parametric(-10) = -10
+    assert p1.get_output() == -1
+    assert p1.get_output() == p1.calc_relu_parametric()
+
+    p1 = Perceptron(ActivationFunctions.RELU_PARAMETRIC, parametric_a=0.02)
+    p1.set_neighbours([p2, p3])
+    p1.weights = [1, 2, 3]
+    p2.output = -12
+    p3.output = -3
+    # 1 + 2*-12 + 3*-3 = -32
+    assert p1.get_output() == -0.64
+
 def test_get_output_sigmoid_bipolar():
     p1 = Perceptron(ActivationFunctions.SIGMOID_BIPOLAR)
     p2 = Perceptron(ActivationFunctions.SIGMOID_BIPOLAR)

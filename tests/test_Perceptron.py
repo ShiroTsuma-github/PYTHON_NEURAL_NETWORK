@@ -135,7 +135,7 @@ def test_get_output_relu_leaky():
     p1.weights = [-0.1, -0.7, 0.4]
     # -0.1 + -0.7*1 + 0.4*0.6 = -0.056
     # relu_leaky(-0.38) = -0.038
-    assert p1.get_output() == -0.055999999999999994
+    assert p1.get_output() == -0.05600000000000001
     assert p1.get_output() == p1.calc_relu_leaky()
     p2.output = -1
     p3.output = -3
@@ -162,7 +162,7 @@ def test_get_output_relu_parametric():
     p1.weights = [-0.1, -0.7, 0.4]
     # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
     # relu_parametric(-0.38) = -0.038
-    assert p1.get_output() == -0.055999999999999994
+    assert p1.get_output() == -0.05600000000000001
     assert p1.get_output() == p1.calc_relu_parametric()
     p2.output = -1
     p3.output = -3
@@ -365,7 +365,7 @@ def test_get_dict():
     p.set_output(p.get_output())
     assert p.get_dict() == {
         'id': 'P/0/0',
-        'output': -0.5599999999999999,
+        'output': -0.56,
         'activation-function': ActivationFunctions.IDENTITY,
         'weights': [-0.1, -0.7, 0.4],
         'inner-weight': -0.1,

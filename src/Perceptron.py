@@ -105,7 +105,7 @@ class Perceptron:
         sum = 0
         for perc, weight in zip(self.left_neightbours, self.weights):
             sum += perc.output * weight
-        return sum
+        return round(sum, 10)
 
     def set_id(self, layer: int, position: int) -> None:
         self.__id: str = f'P/{layer}/{position}'

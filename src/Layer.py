@@ -47,6 +47,8 @@ class Layer:
         self.children.append(child)
         if isinstance(child, Perceptron):
             self.__children_functions.append(child.activation_function)
+            if self.left_layer is not None:
+                child.set_neighbours(self.left_layer.children)
         child.set_id(self.__layer_num, len(self.children))
         self.__update_id()
 
@@ -57,6 +59,18 @@ class Layer:
         for child in children:
             self.add_child(child)
 
+    def connect(self, left_layer: 'Layer' = None, right_layer: 'Layer' = None) -> None:
+        if left_layer is not None:
+            self.left_layer = left_layer
+        if right_layer is not None:
+            self.right_layer = right_layer
+        if self.left_layer is not None:
+            if self.layer_type == LayerTypes.INPUT or self.layer_type == LayerTypes.OUTPUT:
+                return
+            for i, child in enumerate(self.children):
+                if isinstance(child, Perceptron):
+                    child.set_neighbours(self.left_layer.children)
+
     def set_id(self, layer: int) -> None:
         self.__layer_num = layer
         l_type = 'I' if self.layer_type == LayerTypes.INPUT\
@@ -66,8 +80,8 @@ class Layer:
     def __update_id(self):
         if self.__layer_num is None:
             return
-        l_type: Literal['I', 'H', 'O'] = 'I' if self.layer_type == LayerTypes.INPUT\
-            else 'H' if self.layer_type == LayerTypes.PERC else 'O'
+        l_type: Literal['I', 'P', 'O'] = 'I' if self.layer_type == LayerTypes.INPUT\
+            else 'P' if self.layer_type == LayerTypes.PERC else 'O'
         self.id: str = f'L/{l_type}/{self.__layer_num}/{len(self.children)}'
 
     def set_children_ids(self) -> None:
@@ -78,6 +92,12 @@ class Layer:
         return [item.calc_sum() for item in self.children]
 
     def set_children_functions(self, activation_function: ActivationFunctions) -> None:
+        if isinstance(activation_function, list):
+            raise ValueError(
+                f"Use set_children_functions_by_list() instead of set_children_functions() for list of activation functions. Got {type(activation_function)}")
+        if not isinstance(activation_function, ActivationFunctions):
+            raise ValueError(
+                f"Incorrect activation function. Got {type(activation_function)}. Expected: {ActivationFunctions}")
         self.__children_functions = [
             activation_function for _ in range(len(self.children))]
         for child in self.children:
@@ -131,12 +151,15 @@ class Layer:
         for child in self.children:
             print('=' * 20)
             print(f"Child {child.id}")
-            print(child.activation_function)
-            print("Weights: ", child.weights)
-            print("Output with activation function: ", child.get_output())
-            print("On left side: ", child.left_neightbours)
-            print(
-                "Note to self: first item on left side is inner value to get inner weight * inner value (Bias)")
+            if isinstance(child, (NetworkInput, NetworkOutput)):
+                print("Output: ", child.output)
+            if isinstance(child, Perceptron):
+                print(child.activation_function)
+                print("Weights: ", child.weights)
+                print("Output with activation function: ", child.get_output())
+                print("On left side: ", child.left_neightbours)
+                print(
+                    "Note to self: first item on left side is inner value to get inner weight * inner value (Bias)")
 
     def validate(self) -> None:
         if not isinstance(self.layer_type, LayerTypes):

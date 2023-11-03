@@ -28,6 +28,12 @@ class Layer:
     def get_children(self) -> list:
         return self.children
 
+    def get_child(self, index: int) -> 'Layer':
+        if index >= len(self.children) or index < 0:
+            raise ValueError(
+                f"Index out of range. Got {index} | Expected 0 - {len(self.children) - 1}")
+        return self.children[index]
+
     def add_child(self, child) -> None:
         if self.layer_type == LayerTypes.INPUT and not isinstance(child, NetworkInput):
             raise ValueError(
@@ -43,6 +49,13 @@ class Layer:
             self.__children_functions.append(child.activation_function)
         child.set_id(self.__layer_num, len(self.children))
         self.__update_id()
+
+    def add_children(self, children: list) -> None:
+        if not isinstance(children, list):
+            raise ValueError(
+                f"Incorrect children argument. Got {type(children)}. Expected: {list}")
+        for child in children:
+            self.add_child(child)
 
     def set_id(self, layer: int) -> None:
         self.__layer_num = layer

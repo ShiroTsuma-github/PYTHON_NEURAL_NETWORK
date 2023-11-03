@@ -158,7 +158,7 @@ class Perceptron:
         elif self.activation_function == ActivationFunctions.SOFTPLUS:
             return self.calc_softplus()
         elif self.activation_function == ActivationFunctions.STEP_BIPOLAR:
-            return self.calc_step_bipolar(self.__step_bipolar_threshold)
+            return self.calc_step_bipolar()
         elif self.activation_function == ActivationFunctions.STEP_UNIPOLAR:
             return self.calc_step_unipolar()
         elif self.activation_function == ActivationFunctions.RELU_LEAKY:

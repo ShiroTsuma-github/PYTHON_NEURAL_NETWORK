@@ -146,15 +146,6 @@ def test_get_output_relu_leaky():
     assert p1.get_output() == p1.calc_relu_leaky()
 
 
-def test_incorrect_activation_function():
-    p = Perceptron('abc')
-    with pytest.raises(ValueError):
-        p.get_output()
-    p = Perceptron([1, 2, 3])
-    with pytest.raises(ValueError):
-        p.get_output()
-
-
 def test_get_output_relu_parametric():
     p1 = Perceptron(ActivationFunctions.RELU_PARAMETRIC)
     p2 = Perceptron(ActivationFunctions.RELU_PARAMETRIC)
@@ -189,6 +180,7 @@ def test_get_output_relu_parametric():
     # 1 + 2*-12 + 3*-3 = -32
     assert p1.get_output() == -0.64
 
+
 def test_get_output_sigmoid_bipolar():
     p1 = Perceptron(ActivationFunctions.SIGMOID_BIPOLAR)
     p2 = Perceptron(ActivationFunctions.SIGMOID_BIPOLAR)
@@ -208,19 +200,86 @@ def test_get_output_sigmoid_bipolar():
 
 
 def test_get_output_sigmoid_unipolar():
-    pass
+    p = Perceptron(ActivationFunctions.SIGMOID_UNIPOLAR)
+    p2 = Perceptron(ActivationFunctions.SIGMOID_UNIPOLAR)
+    p3 = Perceptron(ActivationFunctions.SIGMOID_UNIPOLAR)
+    p.set_neighbours([p2, p3])
+    p.weights = [1, 2, 3]
+    p2.output = 2
+    p3.output = 3
+    # 1 + 2*2 + 3*3 = 14
+    # sigmoid_unipolar(14) = 0.9999991684719722
+    assert p.get_output() == 0.9999991684719722
+    assert p.get_output() == p.calc_sigmoid_unipolar()
+    p2.output = 1
+    p3.output = 0.6
+    p.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # sigmoid_unipolar(-0.38) = 0.36354745971843366
+    assert p.get_output() == 0.36354745971843366
+    assert p.get_output() == p.calc_sigmoid_unipolar()
 
 
 def test_get_output_softplus():
-    pass
+    p = Perceptron(ActivationFunctions.SOFTPLUS)
+    p2 = Perceptron(ActivationFunctions.SOFTPLUS)
+    p3 = Perceptron(ActivationFunctions.SOFTPLUS)
+    p.set_neighbours([p2, p3])
+    p.weights = [1, 2, 3]
+    p2.output = 2
+    p3.output = 3
+    # 1 + 2*2 + 3*3 = 14
+    # softplus(14) = 14.000000831528373
+    assert p.get_output() == 14.000000831528373
+    assert p.get_output() == p.calc_softplus()
+    p2.output = 1
+    p3.output = 0.6
+    p.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # softplus(-0.38) = 0.4518454273443063
+    assert p.get_output() == 0.4518454273443063
+    assert p.get_output() == p.calc_softplus()
 
 
 def test_get_output_step_bipolar():
-    pass
+    p = Perceptron(ActivationFunctions.STEP_BIPOLAR)
+    p2 = Perceptron(ActivationFunctions.STEP_BIPOLAR)
+    p3 = Perceptron(ActivationFunctions.STEP_BIPOLAR)
+    p.set_neighbours([p2, p3])
+    p.weights = [1, 2, 3]
+    p2.output = 2
+    p3.output = 3
+    # 1 + 2*2 + 3*3 = 14
+    # step_bipolar(14) = 1
+    assert p.get_output() == 1
+    assert p.get_output() == p.calc_step_bipolar()
+    p2.output = 1
+    p3.output = 0.6
+    p.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # step_bipolar(-0.38) = -1
+    assert p.get_output() == -1
 
 
 def test_get_output_step_unipolar():
-    pass
+    p = Perceptron(ActivationFunctions.STEP_UNIPOLAR)
+    p2 = Perceptron(ActivationFunctions.STEP_UNIPOLAR)
+    p3 = Perceptron(ActivationFunctions.STEP_UNIPOLAR)
+    p.set_neighbours([p2, p3])
+    p.weights = [1, 2, 3]
+    p2.output = 2
+    p3.output = 3
+    # 1 + 2*2 + 3*3 = 14
+    # step_unipolar(14) = 1
+    assert p.get_output() == 1
+    assert p.get_output() == p.calc_step_unipolar()
+    p2.output = 1
+    p3.output = 0.6
+    p.weights = [-0.1, -0.7, 0.4]
+    # -0.1 + -0.7*1 + 0.4*0.6 = -0.38
+    # step_unipolar(-0.38) = 0
+    assert p.get_output() == 0
+    assert p.get_output() == p.calc_step_unipolar()
 
 
 def test_set_output():
@@ -264,6 +323,15 @@ def test_set_id():
     assert p.id == 'P/1/1'
     p.set_id(3, 8)
     assert p.id == 'P/3/8'
+
+
+def test_incorrect_activation_function():
+    p = Perceptron('abc')
+    with pytest.raises(ValueError):
+        p.get_output()
+    p = Perceptron([1, 2, 3])
+    with pytest.raises(ValueError):
+        p.get_output()
 
 
 def test_get_dict():

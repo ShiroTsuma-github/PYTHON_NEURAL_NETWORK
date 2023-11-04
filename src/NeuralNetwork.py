@@ -55,7 +55,7 @@ class NeuralNetwork:
     def get_output(self) -> list[float]:
         pass
 
-    def setup(self, inputs: int = 1, outputs: int = 1, perc_layers: int = 1):
+    def setup(self, inputs: int = 1, perc_layers: int = 1):
         layer = Layer(LayerTypes.INPUT)
         layer.set_id(self.__mov_layer_i)
         self.__mov_layer_i += 1
@@ -74,29 +74,33 @@ class NeuralNetwork:
         self.__output_layer = self.layers[len(self.layers) - 1]
         for i in range(inputs):
             self.layers[0].add_child(NetworkInput())
-        for i in range(outputs):
-            self.layers[len(self.layers) - 1].add_child(NetworkOutput())
-            self.layers[len(self.layers) - 2].add_child(Perceptron(ActivationFunctions.STEP_UNIPOLAR))
         for index in range(len(self.layers)):
             if index == 0:
                 self.layers[index].right_layer = self.layers[index + 1]
+                # self.layers[index].connect(right_layer=self.layers[index + 1])
             elif index == len(self.layers) - 1:
                 self.layers[index].left_layer = self.layers[index - 1]
+                # self.layers[index].connect(left_layer=self.layers[index - 1])
             else:
                 self.layers[index].left_layer = self.layers[index - 1]
                 self.layers[index].right_layer = self.layers[index + 1]
+                # self.layers[index].connect(left_layer=self.layers[index - 1], right_layer=self.layers[index + 1])
         self.validate_network()
         self.__update_id()
 
     def set_perceptrons_per_layer(self, perceptrons_per_layer: list[int]) -> None:
         if len(perceptrons_per_layer) != len(self.__perc_layers):
             raise ValueError(
-                f"Got perceptrons for incorrect number of layers. Got {len(perceptrons_per_layer)} | Expected {len(self.__perc_layers)}")
+                f"Got perceptrons for incorrect number of layers. Got {len(perceptrons_per_layer)} | Expected {len(self.__perc_layers)} \
+Remember that output count is equal to the number of perceptrons in the last perceptron layer")
         self.perceptrons_per_layer = perceptrons_per_layer
         for layer, perceptron_count in zip(self.__perc_layers, perceptrons_per_layer):
             for i in range(perceptron_count):
                 layer.add_child(Perceptron(ActivationFunctions.STEP_UNIPOLAR))
+            # layer.connect()
             layer.set_children_ids()
+        for _ in range(perceptrons_per_layer[-1]):
+            self.__output_layer.add_child(NetworkOutput())
 
         for layer in self.layers:
             for child in layer.get_children():
@@ -113,7 +117,7 @@ class NeuralNetwork:
         if index >= 1 and index < len(self.layers) - 1:
             return self.layers[index]
         raise ValueError(
-            f"Index out of range. Got {index} | Expected 1 - {len(self.layers) - 1}")
+            f"Index out of range. Got {index} | Expected 1 - {len(self.layers) - 2}")
 
     def get_dict(self, display=True) -> dict:
         obj_dict = {}
@@ -169,12 +173,11 @@ class NeuralNetwork:
         network_data = data.get('network', {})
         self.id = network_data.get('id', self.id)
         self.setup(network_data.get('input-count', 1),
-                   network_data.get('output-count', 1),
                    network_data.get('hidden-layer_count', 1))
         self.set_input_values(network_data.get('input-values', [0]))
         self.set_perceptrons_per_layer(
             network_data.get('perceptrons-per-layer', [1]))
-        for line in network_data.get('perceptrons_by_hidden_layer', []):
+        for line in network_data.get('perceptrons_data', []):
             func_in_line = network_data['perceptrons_data'][line]['perceptons_activation_functions']
             weights_in_line = network_data['perceptrons_data'][line]['perceptons_weights']
             layer = self.get_layer_by_index(int(line))

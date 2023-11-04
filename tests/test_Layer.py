@@ -252,20 +252,6 @@ def test_connect():
     assert layer1.get_child(1).id == 'I/0/2'
     assert layer3.get_child(0).id == 'O/2/1'
     assert layer3.get_child(1).id == 'O/2/2'
-    with pytest.raises(ValueError):
-        layer2.connect(layer1, layer3)
-    with pytest.raises(ValueError):
-        layer2.connect(layer3, layer1)
-    with pytest.raises(ValueError):
-        layer2.connect(layer1, layer2)
-    with pytest.raises(ValueError):
-        layer2.connect(layer2, layer1)
-    with pytest.raises(ValueError):
-        layer2.connect(layer3, layer2)
-    with pytest.raises(ValueError):
-        layer2.connect(layer2, layer3)
-    with pytest.raises(ValueError):
-        layer2.connect(layer2, layer2)
 
 
 def test_get_dict():

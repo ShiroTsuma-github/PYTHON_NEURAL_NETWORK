@@ -96,7 +96,7 @@ class Perceptron:
 
     def set_neighbours(self, neighbours):
         self.left_neightbours = [self.inner_neighbour]
-        self.weights = [self.__inner_weight]
+        self.__weights = [self.__inner_weight]
         self.previous_weights = []
         for neighbour in neighbours:
             self.add_neightbour(neighbour)

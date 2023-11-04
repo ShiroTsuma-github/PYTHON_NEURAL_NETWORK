@@ -307,8 +307,6 @@ def test_set_neighbours():
     # not sure why it's protected from setting the same perceptron as neighbour twice
     with pytest.raises(ValueError):
         p.set_neighbours([p2, p2])
-    with pytest.raises(ValueError):
-        p.set_neighbours([p2])
 
 
 def test_set_id():

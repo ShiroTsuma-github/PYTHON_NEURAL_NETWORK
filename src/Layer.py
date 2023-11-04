@@ -21,6 +21,17 @@ class Layer:
         self.left_layer: Layer = left_layer
         self.__children_functions: list[ActivationFunctions] = []
         self.__layer_num: int = None
+        self.results: list[float] = []
+
+    def calc_outputs(self) -> None:
+        ans = []
+        for child in self.children:
+            ans.append(child.get_set_output())
+        self.results = ans
+
+    def forward_output(self) -> None:
+        for i in range(len(self.children)):
+            self.right_layer.children[i].output = self.results[i]
 
     def get_child_count(self) -> int:
         return len(self.children)

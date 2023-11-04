@@ -1,0 +1,8 @@
+https://machinelearninggeek.com/activation-functions/#Bipolar_Step_Function
+https://patrickhoo.wixsite.com/diveindatascience/single-post/2019/06/13/activation-functions-and-when-to-use-them
+https://www.analyticsvidhya.com/blog/2022/01/activation-functions-for-neural-networks-and-their-implementation-in-python/
+https://home.agh.edu.pl/~horzyk/lectures/biocyb/BIOCYB-SieciNeuronowe.pdf
+https://machinelearningmastery.com/choose-an-activation-function-for-deep-learning/
+https://wandb.ai/krishamehta/softmax/reports/How-to-Implement-the-Softmax-Function-in-Python--VmlldzoxOTUwNTc
+https://www.simplilearn.com/tutorials/deep-learning-tutorial/perceptron
+https://towardsdatascience.com/parallel-neural-networks-and-transfer-learning-dbce24f2cf58

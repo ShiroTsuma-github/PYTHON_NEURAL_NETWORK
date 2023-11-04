@@ -116,26 +116,53 @@ class Perceptron:
             return 1
         return 0
 
+    def calc_step_unipolar_der(self):
+        return 0
+
     def calc_step_bipolar(self) -> Literal[1, -1]:
         if self.calc_sum() >= self.__step_bipolar_threshold:
             return 1
         return -1
 
+    def calc_step_bipolar_der(self):
+        return 0
+
     def calc_identity(self) -> float:
         return self.__identity_a * self.calc_sum()
+
+    def calc_identity_der(self):
+        return self.__identity_a
 
     def calc_sigmoid_unipolar(self) -> float:
         return 1 / (1 + exp(-self.calc_sum()))
 
+    def calc_sigmoid_unipolar_der(self) -> float:
+        return self.calc_sigmoid_unipolar() * (1 - self.calc_sigmoid_unipolar())
+
     def calc_sigmoid_bipolar(self) -> float:
         return -1 + 2 / (1 + exp(self.calc_sum()))
+
+    def calc_sigmoid_bipolar_der(self) -> float:
+        res = self.calc_sigmoid_bipolar()
+        return 0.5 * (1 + res) * (1 - res)
 
     def calc_relu(self) -> float:
         return max(0, self.calc_sum())
 
+    def calc_relu_der(self) -> float:
+        if self.calc_sum() >= 0:
+            return 1
+        return 0
+
     def calc_relu_leaky(self) -> float:
         sum_ = self.calc_sum()
-        return max(0.1 * sum_, sum_)
+        return max(0.01 * sum_, sum_)
+
+    def calc_relu_leaky_der(self) -> float:
+        sum_ = self.calc_sum()
+        if sum_ >= 0:
+            return 1
+        return 0.01
 
     def calc_relu_parametric(self) -> float:
         sum_ = self.calc_sum()
@@ -143,8 +170,17 @@ class Perceptron:
             return sum_
         return self.__parametric_a * sum_
 
+    def calc_relu_parametric_der(self) -> float:
+        sum_ = self.calc_sum()
+        if sum_ >= 0:
+            return 1
+        return self.__parametric_a
+
     def calc_softplus(self) -> float:
         return log(1 + exp(self.calc_sum()))
+
+    def calc_softplus_der(self) -> float:
+        return 1 / (1 + exp(-self.calc_sum()))
 
     def get_output(self) -> float | Literal[1, -1, 0]:
         if self.activation_function == ActivationFunctions.IDENTITY:
@@ -167,6 +203,35 @@ class Perceptron:
             return self.calc_relu_parametric()
         else:
             raise ValueError("Could not match activation function")
+
+    def get_output_der(self) -> float | Literal[1, -1, 0]:
+        if self.activation_function == ActivationFunctions.IDENTITY:
+            return self.calc_identity_der()
+        elif self.activation_function == ActivationFunctions.RELU:
+            return self.calc_relu_der()
+        elif self.activation_function == ActivationFunctions.SIGMOID_BIPOLAR:
+            return self.calc_sigmoid_bipolar_der()
+        elif self.activation_function == ActivationFunctions.SIGMOID_UNIPOLAR:
+            return self.calc_sigmoid_unipolar_der()
+        elif self.activation_function == ActivationFunctions.SOFTPLUS:
+            return self.calc_softplus_der()
+        elif self.activation_function == ActivationFunctions.STEP_BIPOLAR:
+            return self.calc_step_bipolar_der()
+        elif self.activation_function == ActivationFunctions.STEP_UNIPOLAR:
+            return self.calc_step_unipolar_der()
+        elif self.activation_function == ActivationFunctions.RELU_LEAKY:
+            return self.calc_relu_leaky_der()
+        elif self.activation_function == ActivationFunctions.RELU_PARAMETRIC:
+            return self.calc_relu_parametric_der()
+        else:
+            raise ValueError("Could not match activation function")
+
+    def get_set_output(self):
+        self.output = self.get_output()
+        return self.output
+
+    # def get_set_output_der(self):
+
 
     def set_output(self, value):
         self.output = value

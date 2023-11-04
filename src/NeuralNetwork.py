@@ -55,6 +55,14 @@ class NeuralNetwork:
     def get_output(self) -> list[float]:
         pass
 
+    def run_single(self, inputs: list[float]) -> None:
+        self.set_input_values(inputs)
+        for layer in self.__perc_layers:
+            layer.calc_outputs()
+        self.__perc_layers[-1].forward_output()
+        for item in self.__output_layer.get_children():
+            print(item.output)
+
     def setup(self, inputs: int = 1, perc_layers: int = 1):
         layer = Layer(LayerTypes.INPUT)
         layer.set_id(self.__mov_layer_i)
@@ -190,7 +198,12 @@ Remember that output count is equal to the number of perceptrons in the last per
 
 if __name__ == '__main__':
     network = NeuralNetwork()
-    network.setup(2, 1, 2)
-    network.get_dict()
-    network.set_input_values([0.7, 1.3])
-    network.get_layer_by_index(2).debug_indepth()
+    network.setup(2, 2)
+    network.set_perceptrons_per_layer([2, 2])
+    network.get_layer_by_index(1).set_children_functions_by_list(
+        [ActivationFunctions.STEP_BIPOLAR, ActivationFunctions.RELU])
+    network.get_layer_by_index(2).set_children_functions_by_list(
+        [ActivationFunctions.SOFTPLUS, ActivationFunctions.RELU_LEAKY])
+    network.get_layer_by_index(1).set_children_weights([[0.2, 0.5, 0.5], [1, 0.5, 0.5]])
+    network.get_layer_by_index(2).set_children_weights([[0.2, 0.5, 0.5], [1, 0.5, 0.5]])
+    network.run_single([0.7, 1.3])

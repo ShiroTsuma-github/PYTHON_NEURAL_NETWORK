@@ -75,6 +75,13 @@ class Perceptron:
         self.__weights.append(value)
         self.previous_weights = [self.weights]
 
+    def modify_weights(self, expected_output, training_set):
+        new = []
+        training_set = [1] + training_set
+        for i, item in enumerate(self.__weights):
+            new.append(item + training_set[i] * expected_output)
+        self.weights = new
+
     def validate(self, explicit=False):
         if len(self.weights) != len(self.left_neightbours):
             raise Exception(f'Perceptron id: {self.id}')
@@ -231,7 +238,6 @@ class Perceptron:
         return self.output
 
     # def get_set_output_der(self):
-
 
     def set_output(self, value):
         self.output = value

@@ -1,6 +1,7 @@
 import json
 from cryptography.fernet import Fernet
 import pprint
+import csv
 import sys
 import os
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
@@ -55,13 +56,52 @@ class NeuralNetwork:
     def get_output(self) -> list[float]:
         pass
 
-    def run_single(self, inputs: list[float]) -> None:
+    def __load_csv(self, path: str) -> tuple[list[list[float]], list[float]]:
+        data = []
+        output = []
+        with open(path, newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            for row in reader:
+                data.append([int(val) for val in row[0].split(', ')])
+                output.append(int(row[1]))
+        return (data, output)
+
+    def test(self, inputs: list[float]) -> None:
         self.set_input_values(inputs)
         for layer in self.__perc_layers:
             layer.calc_outputs()
         self.__perc_layers[-1].forward_output()
         for item in self.__output_layer.get_children():
             print(item.output)
+
+    def train_single_perceptron(self, csv_path):
+        data, output = self.__load_csv(csv_path)
+        perceptron = self.__perc_layers[0].get_children()[0]
+        layer = self.__perc_layers[0]
+        iter_count = 0
+        max_iter = len(data) * 100
+        newdata = data.copy()
+        newoutput = output.copy()
+        while True:
+            incorrect_data = newdata.copy()
+            incorrect_output = newoutput.copy()
+            for inputs, expected_output in zip(incorrect_data, incorrect_output):
+                self.set_input_values(inputs)
+                perceptron.get_set_output()
+                layer.results = [perceptron.output]
+                if perceptron.output != expected_output:
+                    newdata = data.copy()
+                    newoutput = output.copy()
+                    perceptron.modify_weights(expected_output, inputs)
+                else:
+                    newdata.pop(0)
+                    newoutput.pop(0)
+            if incorrect_data == []:
+                break
+            elif iter_count > max_iter:
+                print('Max iterations reached')
+                break
+            iter_count += 1
 
     def setup(self, inputs: int = 1, perc_layers: int = 1):
         layer = Layer(LayerTypes.INPUT)
@@ -198,12 +238,19 @@ Remember that output count is equal to the number of perceptrons in the last per
 
 if __name__ == '__main__':
     network = NeuralNetwork()
-    network.setup(2, 2)
-    network.set_perceptrons_per_layer([2, 2])
-    network.get_layer_by_index(1).set_children_functions_by_list(
-        [ActivationFunctions.STEP_BIPOLAR, ActivationFunctions.RELU])
-    network.get_layer_by_index(2).set_children_functions_by_list(
-        [ActivationFunctions.SOFTPLUS, ActivationFunctions.RELU_LEAKY])
-    network.get_layer_by_index(1).set_children_weights([[0.2, 0.5, 0.5], [1, 0.5, 0.5]])
-    network.get_layer_by_index(2).set_children_weights([[0.2, 0.5, 0.5], [1, 0.5, 0.5]])
-    network.run_single([0.7, 1.3])
+    network.setup(2, 1)
+    network.set_perceptrons_per_layer([1])
+    network.set_layer_activation_function(1, ActivationFunctions.STEP_BIPOLAR)
+    network.get_layer_by_index(1).set_children_weights([[0, 0, 0]])
+    # network.test([-1, -1]) 
+    network.train_single_perceptron('resources/training/andgate.csv')
+    network.test([1, 1])
+    network.test([1, -1])
+    network.test([-1, 1])
+    network.test([-1, -1])
+    network.train_single_perceptron('resources/training/xorgate.csv')
+    network.test([1, 1])
+    network.test([1, -1])
+    network.test([-1, 1])
+    network.test([-1, -1])
+

@@ -2,6 +2,7 @@ from typing import Literal
 from math import exp, log
 import sys
 import os
+from random import randint
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
 from src.NetworkInput import NetworkInput       # noqa: E402
@@ -12,21 +13,28 @@ class Perceptron:
     def __init__(self,
                  activation_function: int,
                  inner_weight=0,
+                 learning_rate=0.1,
+                 momentum=0,
                  step_bipolar_threshold=0,
                  identity_a=1,
                  parametric_a=0.1) -> None:
         self.__id = 'P/?/?'
+        self.learning_rate = learning_rate
+        self.momentum = momentum
         self.activation_function = activation_function
         self.__inner_weight = inner_weight
         self.__weights: list = [self.__inner_weight]
         self.previous_weights: list[list[float]] = []
         self.__output: float = 0
+        self.error: float = 0
+        self.previous_difference: float = []
         self.previous_outputs: list[float] = []
         self.inner_neighbour = NetworkInput(1)
         self.__step_bipolar_threshold = step_bipolar_threshold
         self.__identity_a = identity_a
         self.__parametric_a = parametric_a
         self.left_neightbours: 'list[Perceptron]' = [self.inner_neighbour]
+        self.right_neightbours: 'list[Perceptron]' = []
         self.validate()
 
     @property
@@ -65,7 +73,7 @@ class Perceptron:
             raise ValueError(f"Incorrect weights. {self.id} | {value}")
         self.__weights = value
         self.__inner_weight = value[0]
-        self.previous_weights.append(value)
+        self.previous_weights.append(value.copy())
         if len(self.previous_weights) > 50:
             self.previous_weights.pop(0)
 
@@ -81,6 +89,44 @@ class Perceptron:
         for i, item in enumerate(self.__weights):
             new.append(item + training_set[i] * expected_output)
         self.weights = new
+
+    def update_weights(self):
+        new = []
+        for i, item in enumerate(self.__weights):
+            new.append(item + self.learning_rate * self.error * self.left_neightbours[i].output + self.momentum * self.get_previous_difference(i))
+        self.weights = new
+
+    def randomize_weights_around_1(self):
+        new = []
+        for item in self.__weights:
+            new.append(randint(-100, 100) / 100)
+        self.weights = new
+
+    def randomize_weights_around_10(self):
+        new = []
+        for item in self.__weights:
+            new.append(randint(-1000, 1000) / 100)
+        self.weights = new
+
+    def get_previous_difference(self, index):
+        if len(self.previous_weights) < 2:
+            return 0
+        return self.previous_weights[-1][index] - self.previous_weights[-2][index]
+
+    def get_max_weight_change(self):
+        if len(self.previous_weights) < 2:
+            return 0
+        return max([abs(item - self.previous_weights[-2][i]) for i, item in enumerate(self.previous_weights[-1])])
+
+    def calc_error(self, expected_output=None):
+        if expected_output is None:
+            self.error = sum([perc.error * perc.weights[i] for i, perc in enumerate(self.right_neightbours)]) * self.get_output_der()
+            if self.error > 0:
+                print("Error is positive")
+            return
+        self.error = (expected_output - self.output) * self.get_output_der()
+        if self.error > 0:
+            print("Error is positive")
 
     def validate(self, explicit=False):
         if len(self.weights) != len(self.left_neightbours):
@@ -108,6 +154,9 @@ class Perceptron:
         for neighbour in neighbours:
             self.add_neightbour(neighbour)
 
+    def set_right_neighbours(self, neighbours):
+        self.right_neightbours = neighbours
+
     def calc_sum(self) -> float:
         sum = 0
         for perc, weight in zip(self.left_neightbours, self.weights):
@@ -124,7 +173,7 @@ class Perceptron:
         return 0
 
     def calc_step_unipolar_der(self):
-        return 0
+        raise TypeError("Step unipolar derivative is not defined")
 
     def calc_step_bipolar(self) -> Literal[1, -1]:
         if self.calc_sum() >= self.__step_bipolar_threshold:
@@ -132,7 +181,7 @@ class Perceptron:
         return -1
 
     def calc_step_bipolar_der(self):
-        return 0
+        raise TypeError("Step bipolar derivative is not defined")
 
     def calc_identity(self) -> float:
         return self.__identity_a * self.calc_sum()
@@ -144,7 +193,8 @@ class Perceptron:
         return 1 / (1 + exp(-self.calc_sum()))
 
     def calc_sigmoid_unipolar_der(self) -> float:
-        return self.calc_sigmoid_unipolar() * (1 - self.calc_sigmoid_unipolar())
+        res = self.calc_sigmoid_unipolar()
+        return res * (1 - res)
 
     def calc_sigmoid_bipolar(self) -> float:
         return -1 + 2 / (1 + exp(self.calc_sum()))

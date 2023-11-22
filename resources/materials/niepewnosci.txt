@@ -1,0 +1,3 @@
+mamy dla pojedynczego perceptronu
+jak uzyc ten dla uczenia pojedynczego, ale dla kilku (np. xor)
+w sensie jak potem sprawdzic czy poprawny wynik

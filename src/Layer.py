@@ -29,15 +29,27 @@ class Layer:
             ans.append(child.get_set_output())
         self.results = ans
 
+    def calc_errors(self, data=None) -> None:
+        for child in self.children:
+            child.calc_error(data)
+
+    def get_max_error(self) -> float:
+        return max([child.error for child in self.children])
+
     def forward_output(self) -> None:
         for i in range(len(self.children)):
             self.right_layer.children[i].output = self.results[i]
+        self.right_layer.results = self.results
 
     def get_child_count(self) -> int:
         return len(self.children)
 
     def get_children(self) -> list:
         return self.children
+
+    def prepare_for_backpropagation(self) -> None:
+        for child in self.children:
+            child.set_right_neighbours(self.right_layer.children)
 
     def get_child(self, index: int) -> 'Layer':
         if index >= len(self.children) or index < 0:
@@ -101,6 +113,20 @@ class Layer:
 
     def get_sums(self) -> list[float]:
         return [item.calc_sum() for item in self.children]
+
+    def randomize_weights(self, ten=False) -> None:
+        for child in self.children:
+            if not ten:
+                child.randomize_weights_around_1()
+            else:
+                child.randomize_weights_around_10()
+
+    def update_children_weights(self) -> None:
+        for child in self.children:
+            child.update_weights()
+
+    def get_max_weight_change(self) -> float:
+        return max([child.get_max_weight_change() for child in self.children])
 
     def set_children_functions(self, activation_function: ActivationFunctions) -> None:
         if isinstance(activation_function, list):

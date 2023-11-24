@@ -30,11 +30,12 @@ class Perceptron:
         self.previous_difference: float = []
         self.previous_outputs: list[float] = []
         self.inner_neighbour = NetworkInput(1)
+        self.__velocity_weight = []
         self.__step_bipolar_threshold = step_bipolar_threshold
         self.__identity_a = identity_a
         self.__parametric_a = parametric_a
-        self.left_neightbours: 'list[Perceptron]' = [self.inner_neighbour]
-        self.right_neightbours: 'list[Perceptron]' = []
+        self.left_neighbours: 'list[Perceptron]' = [self.inner_neighbour]
+        self.right_neighbours: 'list[Perceptron]' = []
         self.validate()
 
     @property
@@ -92,8 +93,11 @@ class Perceptron:
 
     def update_weights(self):
         new = []
+        if len(self.__velocity_weight) == 0:
+            self.__velocity_weight = [0] * len(self.__weights)
         for i, item in enumerate(self.__weights):
-            new.append(item + self.learning_rate * self.error * self.left_neightbours[i].output + self.momentum * self.get_previous_difference(i))
+            self.__velocity_weight[i] = self.momentum * self.__velocity_weight[i] + self.learning_rate * self.error * self.left_neighbours[i].output
+            new.append(item + self.__velocity_weight[i])
         self.weights = new
 
     def randomize_weights_around_1(self):
@@ -120,42 +124,43 @@ class Perceptron:
 
     def calc_error(self, index, expected_output=None):
         if expected_output is None:
-            self.error = sum([perc.error * perc.weights[index] for perc in self.right_neightbours]) * self.get_output_der()
-            return
-        self.error = (expected_output - self.output) * self.get_output_der()
+            self.error = sum([perc.error * perc.weights[index] for perc in self.right_neighbours]) * self.get_output_der()
+        else:
+            self.error = (expected_output - self.output) * self.get_output_der()
+        return self.error
 
     def validate(self, explicit=False):
-        if len(self.weights) != len(self.left_neightbours):
+        if len(self.weights) != len(self.left_neighbours):
             raise Exception(f'Perceptron id: {self.id}')
         if explicit:
             print(
-                f"Weight count and Neigbour count match {len(self.left_neightbours)} | {len(self.weights) - 1}")
+                f"Weight count and Neigbour count match {len(self.left_neighbours)} | {len(self.weights) - 1}")
 
-    def add_neightbour(self, neightbour, weight: float = 0):
-        if not isinstance(neightbour, (Perceptron, NetworkInput)):
+    def add_neighbour(self, neighbour, weight: float = 0):
+        if not isinstance(neighbour, (Perceptron, NetworkInput)):
             raise ValueError("Neighbour is not instance "
                              "of Perceptron or Network Input. "
-                             f"Instead {type(neightbour)}")
-        if neightbour in self.left_neightbours:
+                             f"Instead {type(neighbour)}")
+        if neighbour in self.left_neighbours:
             raise ValueError("Neighbour already exists")
-        if neightbour == self:
+        if neighbour == self:
             raise ValueError("Cannot add self as neighbour")
-        self.left_neightbours.append(neightbour)
+        self.left_neighbours.append(neighbour)
         self.__add_weight(weight)
 
     def set_neighbours(self, neighbours):
-        self.left_neightbours = [self.inner_neighbour]
+        self.left_neighbours = [self.inner_neighbour]
         self.__weights = [self.__inner_weight]
         self.previous_weights = []
         for neighbour in neighbours:
-            self.add_neightbour(neighbour)
+            self.add_neighbour(neighbour)
 
     def set_right_neighbours(self, neighbours):
-        self.right_neightbours = neighbours
+        self.right_neighbours = neighbours
 
     def calc_sum(self) -> float:
         sum_ = 0
-        for perc, weight in zip(self.left_neightbours, self.__weights):
+        for perc, weight in zip(self.left_neighbours, self.__weights):
             sum_ += perc.output * weight
         return sum_
 
@@ -193,7 +198,7 @@ class Perceptron:
         return res * (1 - res)
 
     def calc_sigmoid_bipolar(self) -> float:
-        return -1 + 2 / (1 + exp(self.calc_sum()))
+        return -1 + 2 / (1 + exp(-self.calc_sum()))
 
     def calc_sigmoid_bipolar_der(self) -> float:
         res = self.calc_sigmoid_bipolar()
@@ -295,9 +300,9 @@ class Perceptron:
         obj_dict['activation-function'] = self.activation_function
         obj_dict['weights'] = self.__weights
         obj_dict['inner-weight'] = self.__inner_weight
-        obj_dict['left-side-U'] = [item.output for item in self.left_neightbours[1:]]
+        obj_dict['left-side-U'] = [item.output for item in self.left_neighbours[1:]]
         obj_dict['inner-U'] = self.inner_neighbour.output
-        obj_dict['U-id'] = [item.id for item in self.left_neightbours]
+        obj_dict['U-id'] = [item.id for item in self.left_neighbours]
         return obj_dict
 
     def __repr__(self) -> str:

@@ -5,7 +5,7 @@ import csv
 import sys
 import os
 import time
-from random import randrange
+from random import randrange, shuffle
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
 from src.Layer import Layer                                     # noqa: E402
@@ -73,16 +73,14 @@ class NeuralNetwork:
         with open(path, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
-                data.append([int(val) for val in row[0].split(', ')])
-                output.append(int(row[1]))
+                if len(row) == 0:
+                    continue
+                data.append([float(val) for val in row[:-1]])
+                output.append(float(row[-1]))
         return (data, output)
 
     def test(self, inputs: list[float]) -> None:
-        self.set_input_values(inputs)
-        for layer in self.__perc_layers:
-            layer.calc_outputs()
-            print(layer.results)
-        self.__perc_layers[-1].forward_output()
+        self.forward(inputs)
         for item in self.__output_layer.get_children():
             print(item.output)
 
@@ -120,8 +118,7 @@ class NeuralNetwork:
     def train_backpropagation(self, csv_path,
                               limit_iter=100,
                               limit_time_sec=10,
-                              error_threshold=0.00001,
-                              max_weight_change_threshold=0.0001):
+                              error_threshold=0.00001):
 
         def should_run(end_time, iter_count):
             if limit_iter is None:
@@ -143,23 +140,36 @@ class NeuralNetwork:
         iter_count = 0
         while (should_run(end_time, iter_count)):
             iter_count += 1
-            random_index = randrange(len(data))
-            single_data = data[random_index]
-            single_output = output[random_index]
-            self.set_input_values(single_data)
-            for layer in self.__perc_layers:
-                layer.calc_outputs()
-            self.__perc_layers[-1].forward_output()
-            self.__perc_layers[-1].calc_errors(single_output)
-            for layer in self.__perc_layers[::-1][1:]:
-                layer.calc_errors()
-            for layer in self.__perc_layers:
-                layer.update_children_weights()
-            max_weight_change = max([layer.get_max_weight_change() for layer in self.__perc_layers])
-            max_error = max([layer.get_max_error() for layer in self.__perc_layers])
-            if max_error < error_threshold and max_weight_change < max_weight_change_threshold:
-                print(iter_count)
-                break
+            indexes = [i for i in range(len(data))]
+            shuffle(indexes)
+            data = [data[i] for i in indexes]
+            output = [output[i] for i in indexes]
+            total_error = 0
+            for single_data, single_output in zip(data, output):
+                self.forward(single_data)
+                total_error += self.propagate_error(single_output)
+                self.update_weights()
+            average_error = total_error / len(data)
+            # if average_error < error_threshold:
+            #     print("Error under threshold. Ending at ", iter_count)
+            #     break
+
+    def forward(self, single_data):
+        self.set_input_values(single_data)
+        for layer in self.__perc_layers:
+            layer.calc_outputs()
+        self.__perc_layers[-1].forward_output()
+
+    def propagate_error(self, single_output):
+        total_error = 0
+        total_error += self.__perc_layers[-1].calc_errors(single_output)
+        for layer in self.__perc_layers[::-1][1:]:
+            total_error += layer.calc_errors()
+        return total_error
+
+    def update_weights(self):
+        for layer in self.__perc_layers:
+            layer.update_children_weights()
 
     def get_perc_layers(self) -> list[Layer]:
         return self.__perc_layers
@@ -186,14 +196,11 @@ class NeuralNetwork:
         for index in range(len(self.layers)):
             if index == 0:
                 self.layers[index].right_layer = self.layers[index + 1]
-                # self.layers[index].connect(right_layer=self.layers[index + 1])
             elif index == len(self.layers) - 1:
                 self.layers[index].left_layer = self.layers[index - 1]
-                # self.layers[index].connect(left_layer=self.layers[index - 1])
             else:
                 self.layers[index].left_layer = self.layers[index - 1]
                 self.layers[index].right_layer = self.layers[index + 1]
-                # self.layers[index].connect(left_layer=self.layers[index - 1], right_layer=self.layers[index + 1])
         self.validate_network()
         self.__update_id()
 
@@ -206,7 +213,6 @@ Remember that output count is equal to the number of perceptrons in the last per
         for layer, perceptron_count in zip(self.__perc_layers, perceptrons_per_layer):
             for i in range(perceptron_count):
                 layer.add_child(Perceptron(ActivationFunctions.STEP_UNIPOLAR, learning_rate=self.learning_rate, momentum=self.momentum))
-            # layer.connect()
             layer.set_children_ids()
         for _ in range(perceptrons_per_layer[-1]):
             self.__output_layer.add_child(NetworkOutput())
@@ -302,27 +308,35 @@ Remember that output count is equal to the number of perceptrons in the last per
 
 
 if __name__ == '__main__':
-    network = NeuralNetwork(learning_rate=0.1, momentum=0)
+
+    network = NeuralNetwork(learning_rate=0.1, momentum=0.9)
     # network.load_network('network.nn')
-    network.setup(2, 2)
-    network.set_perceptrons_per_layer([2, 1])
-    network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_BIPOLAR)
-    network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_BIPOLAR)
+    network.setup(2, 3)
+    network.set_perceptrons_per_layer([2, 2, 1])
+    network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
+    network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
+    network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
+    # network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_UNIPOLAR)
     network.randomize_weights()
-    # network.get_layer_by_index(1).set_children_weights([[0.16, 0.05, 0.02], [0.58, -0.46, -0.4]])
-    # network.get_layer_by_index(2).set_children_weights([[-0.9, -0.99, -0.86]])
+    # network.get_layer_by_index(1).set_children_weights([[0, 0.46224844, 0.31102436], [0, 0.02655818, 0.57753249]])
+    # network.get_layer_by_index(2).set_children_weights([[0, 0.93985102, 0.92043428], [0, 0.23729138, 0.89560753]])
+    # network.get_layer_by_index(3).set_children_weights([[0, 0.12755261, 0.82588899]])
+    network.get_layer_by_index(1).set_children_weights([[0, 0.46224844, 0.02655818], [0, 0.31102436, 0.57753249]])
+    network.get_layer_by_index(2).set_children_weights([[0, 0.93985102, 0.23729138], [0, 0.92043428, 0.89560753]])
+    network.get_layer_by_index(3).set_children_weights([[0, 0.12755261, 0.82588899]])
+
     # # network.get_layer_by_index(1).debug_indepth()
     network.train_backpropagation('resources\\training\\xorgate.csv',
-                                  limit_iter=10_000,
+                                  limit_iter=10000,
                                   limit_time_sec=None,
                                   error_threshold=0.00001)
     # network.save_network('network.nn')
-    network.get_layer_by_index(1).debug_indepth()
-    network.get_layer_by_index(2).debug_indepth()
+    # network.get_layer_by_index(1).debug_indepth()
+    # network.get_layer_by_index(2).debug_indepth()
     # network.train_single_perceptron('resources\\training\\xorgate.csv')
-    network.test([-1, -1])
-    network.test([-1, 1])
-    network.test([1, -1])
-    network.test([1, 1])
+    network.test([1, 0])
+    # network.test([0, 1])
+    # network.test([1, 0])
+    # network.test([1, 1])
     # network.test([-1, -1]) 
 

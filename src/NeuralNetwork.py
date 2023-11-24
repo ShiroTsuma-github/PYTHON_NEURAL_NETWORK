@@ -4,7 +4,6 @@ import pprint
 import csv
 import sys
 import os
-from math import exp
 import datetime as dt
 from random import shuffle
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
@@ -309,7 +308,8 @@ Remember that output count is equal to the number of perceptrons in the last per
                 'input-values': self.get_input_values(),
                 'output-values': self.get_output_values(),
                 'perceptrons_data': perc_dict
-            }
+            },
+            'learning_rate': self.learning_rate
         }
         json_string = json.dumps(save_dict)
 
@@ -341,6 +341,7 @@ Remember that output count is equal to the number of perceptrons in the last per
             layer = self.get_layer_by_index(int(line))
             layer.set_children_functions_by_list(func_in_line)
             layer.set_children_weights(weights_in_line)
+        self.learning_rate = data.get('learning_rate', 0.1)
 
     def __repr__(self) -> str:
         return self.id
@@ -348,35 +349,41 @@ Remember that output count is equal to the number of perceptrons in the last per
 
 if __name__ == '__main__':
     network = NeuralNetwork(learning_rate=0.3, momentum=0.9)
-    network.setup(2, 3)
-    network.set_perceptrons_per_layer([2, 2, 1])
-    # network.setup(2, 3)
-    # network.set_perceptrons_per_layer([2, 2, 1])
-    network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
-    network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
-    network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
-    network.randomize_weights()
+    # network.setup(4, 3)
+    # network.set_perceptrons_per_layer([4, 4, 3])
+    # # network.setup(2, 3)
+    # # network.set_perceptrons_per_layer([2, 2, 1])
+    # network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
+    # network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
+    # network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
+    # network.randomize_weights()
+    # # network.train_backpropagation('resources\\training\\iris.csv',
+    # #                               limit_iter=10_000,
+    # #                               limit_time_sec=None,
+    # #                               error_threshold=0.00001,
+    # #                               decay_learning_rate=True,
+    # #                               decay_factor=0.1,
+    # #                               epoch_decay_step=7)
     # network.train_backpropagation('resources\\training\\iris.csv',
     #                               limit_iter=10_000,
     #                               limit_time_sec=None,
-    #                               error_threshold=0.00001,
-    #                               decay_learning_rate=True,
-    #                               decay_factor=0.1,
-    #                               epoch_decay_step=7)
-    network.train_backpropagation('resources\\training\\xorgate.csv',
-                                  limit_iter=10_000,
-                                  limit_time_sec=None,
-                                  error_threshold=0.00001,
-                                  linear_reduction_learning_rate=True,
-                                  linear_min=0.0001,
-                                  linear_steps=100)
-    # network.test([4.8, 3.4, 1.6, 0.2], True)  # 1 0 0
-    # network.test([5.0, 3.3, 1.4, 0.2], True)  # 1 0 0
-    # network.test([7.0, 3.2, 4.7, 1.4], True)  # 0 1 0
-    # network.test([5.8, 2.7, 5.1, 1.9], True)  # 0 0 1
+    #                               error_threshold=0.005,
+    #                               linear_reduction_learning_rate=True,
+    #                               linear_min=0.0001,
+    #                               linear_steps=100)
+    # network.save_network('resources\\networks\\iris.nn')
+    network.load_network('resources\\networks\\iris.nn')
+    network.test([4.8, 3.4, 1.6, 0.2], True)  # 1 0 0
+    network.test([5.0, 3.3, 1.4, 0.2], True)  # 1 0 0
+    network.test([7.0, 3.2, 4.7, 1.4], True)  # 0 1 0
+    network.test([5.8, 2.7, 5.1, 1.9], True)  # 0 0 1
+    network.test([6.7, 3.3, 5.7, 2.1], True)  # 0 0 1
+    network.test([6.3, 2.3, 4.4, 1.3], True)  # 0 1 0
 
-    network.test([0, 0])
-    network.test([0, 1])
-    network.test([1, 0])
-    network.test([1, 1])
+
+    # possible problems with training of 2 and more outputs???
+    # network.test([0, 0])
+    # network.test([0, 1])
+    # network.test([1, 0])
+    # network.test([1, 1])
 

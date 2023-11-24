@@ -5,7 +5,7 @@ import csv
 import sys
 import os
 import time
-from random import randrange, shuffle
+from random import shuffle
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
 from src.Layer import Layer                                     # noqa: E402
@@ -147,12 +147,15 @@ class NeuralNetwork:
             total_error = 0
             for single_data, single_output in zip(data, output):
                 self.forward(single_data)
-                total_error += self.propagate_error(single_output)
+                error = self.propagate_error(single_output)
+                total_error += error * error
                 self.update_weights()
             average_error = total_error / len(data)
-            # if average_error < error_threshold:
-            #     print("Error under threshold. Ending at ", iter_count)
-            #     break
+            if iter_count % 100 == 0:
+                print(f'Iteration {iter_count} | Average error: {average_error}')
+            if average_error < error_threshold:
+                print("Error under threshold. Ending at ", iter_count)
+                break
 
     def forward(self, single_data):
         self.set_input_values(single_data)
@@ -309,34 +312,30 @@ Remember that output count is equal to the number of perceptrons in the last per
 
 if __name__ == '__main__':
 
-    network = NeuralNetwork(learning_rate=0.1, momentum=0.9)
-    # network.load_network('network.nn')
-    network.setup(2, 3)
-    network.set_perceptrons_per_layer([2, 2, 1])
+    network = NeuralNetwork(learning_rate=0.3, momentum=0.9)
+    network.setup(4, 3)
+    network.set_perceptrons_per_layer([3, 3, 1])
+    # network.setup(2, 3)
+    # network.set_perceptrons_per_layer([2, 2, 1])
     network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
     network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
     network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
-    # network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_UNIPOLAR)
     network.randomize_weights()
-    # network.get_layer_by_index(1).set_children_weights([[0, 0.46224844, 0.31102436], [0, 0.02655818, 0.57753249]])
-    # network.get_layer_by_index(2).set_children_weights([[0, 0.93985102, 0.92043428], [0, 0.23729138, 0.89560753]])
-    # network.get_layer_by_index(3).set_children_weights([[0, 0.12755261, 0.82588899]])
-    network.get_layer_by_index(1).set_children_weights([[0, 0.46224844, 0.02655818], [0, 0.31102436, 0.57753249]])
-    network.get_layer_by_index(2).set_children_weights([[0, 0.93985102, 0.23729138], [0, 0.92043428, 0.89560753]])
-    network.get_layer_by_index(3).set_children_weights([[0, 0.12755261, 0.82588899]])
-
-    # # network.get_layer_by_index(1).debug_indepth()
-    network.train_backpropagation('resources\\training\\xorgate.csv',
-                                  limit_iter=10000,
+    network.train_backpropagation('resources\\training\\iris.csv',
+                                  limit_iter=40_000,
                                   limit_time_sec=None,
                                   error_threshold=0.00001)
-    # network.save_network('network.nn')
-    # network.get_layer_by_index(1).debug_indepth()
-    # network.get_layer_by_index(2).debug_indepth()
-    # network.train_single_perceptron('resources\\training\\xorgate.csv')
-    network.test([1, 0])
+    # network.train_backpropagation('resources\\training\\iris.csv',
+    #                               limit_iter=10000,
+    #                               limit_time_sec=None,
+    #                               error_threshold=1e-5)
+    network.test([4.8,3.4,1.6,0.2]) #1
+    network.test([5.0,3.3,1.4,0.2]) #1
+    network.test([7.0,3.2,4.7,1.4]) #0
+    network.test([5.8,2.7,5.1,1.9]) #0
+
+    # network.test([0, 0])
     # network.test([0, 1])
     # network.test([1, 0])
     # network.test([1, 1])
-    # network.test([-1, -1]) 
 

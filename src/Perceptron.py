@@ -126,7 +126,7 @@ class Perceptron:
         if expected_output is None:
             self.error = sum([perc.error * perc.weights[index] for perc in self.right_neighbours]) * self.get_output_der()
         else:
-            self.error = (expected_output - self.output) * self.get_output_der()
+            self.error = (expected_output[index - 1] - self.output) * self.get_output_der()
         return self.error
 
     def validate(self, explicit=False):

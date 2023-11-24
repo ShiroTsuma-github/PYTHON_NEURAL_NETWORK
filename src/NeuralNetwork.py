@@ -4,7 +4,8 @@ import pprint
 import csv
 import sys
 import os
-import time
+from math import exp
+import datetime as dt
 from random import shuffle
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(ROOT_DIR)
@@ -70,22 +71,33 @@ class NeuralNetwork:
     def __load_csv(self, path: str) -> tuple[list[list[float]], list[float]]:
         data = []
         output = []
+        dane_wej = self.__input_layer.get_child_count()
         with open(path, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
                 if len(row) == 0:
                     continue
-                data.append([float(val) for val in row[:-1]])
-                output.append(float(row[-1]))
+                data.append([float(val) for val in row[:dane_wej]])
+                output.append([float(val) for val in row[dane_wej:]])
         return (data, output)
 
-    def test(self, inputs: list[float]) -> None:
+    def test(self, inputs: list[float], verbose=False) -> None:
         self.forward(inputs)
-        for item in self.__output_layer.get_children():
-            print(item.output)
+        results = [item.output for item in self.__output_layer.get_children()]
+        if verbose:
+            print(f'Input {str(inputs).ljust(30, " ")} | Output {str(results)}')
+        else:
+            print(results)
 
     def z_score(self, data: list[list[float]]) -> list[list[float]]:
         return NotImplementedError
+
+    def learning_rate_decay(self, decay_factor: float) -> None:
+        self.learning_rate -= round(self.learning_rate * decay_factor, 4)
+
+    def learning_rate_linear_reduction(self, original, min: float = 0.0001, steps=100) -> None:
+        reduction = (original - min) / steps
+        self.learning_rate -= reduction
 
     def train_single_perceptron(self, csv_path):
         data, output = self.__load_csv(csv_path)
@@ -118,25 +130,40 @@ class NeuralNetwork:
     def train_backpropagation(self, csv_path,
                               limit_iter=100,
                               limit_time_sec=10,
-                              error_threshold=0.00001):
+                              error_threshold=0.00001,
+                              decay_learning_rate=False,
+                              decay_factor=0.1,
+                              epoch_decay_step=10,
+                              linear_reduction_learning_rate=False,
+                              linear_min=0.0001,
+                              linear_steps=100):
 
-        def should_run(end_time, iter_count):
+        def should_run(end_time, iter_count) -> bool:
             if limit_iter is None:
-                if time.time() < end_time:
+                # if time.time() < end_time:
+                #     return True
+                if dt.datetime.now() < end_time:
                     return True
+                print("No time")
                 return False
             elif limit_time_sec is None:
                 if iter_count < limit_iter:
                     return True
+                "No iterations"
                 return False
             else:
-                if iter_count < limit_iter and time.time() < end_time:
+                # if iter_count < limit_iter and time.time() < end_time:
+                #     return True
+                if iter_count < limit_iter and dt.datetime.now() < end_time:
                     return True
+                print("No iterations or time")
                 return False
 
+        original_learning_rate = self.learning_rate
         self.prepare_for_backpropagation()
         data, output = self.__load_csv(csv_path)
-        end_time = time.time() + 0 if limit_time_sec is None else limit_time_sec
+        # end_time = time.time() + 0 if limit_time_sec is None else limit_time_sec
+        end_time = dt.datetime.now() + dt.timedelta(seconds=0 if limit_time_sec is None else limit_time_sec)
         iter_count = 0
         while (should_run(end_time, iter_count)):
             iter_count += 1
@@ -152,7 +179,16 @@ class NeuralNetwork:
                 self.update_weights()
             average_error = total_error / len(data)
             if iter_count % 100 == 0:
-                print(f'Iteration {iter_count} | Average error: {average_error}')
+                if decay_learning_rate:
+                    if iter_count % (100 * epoch_decay_step) == 0:
+                        self.learning_rate_decay(decay_factor)
+                if decay_learning_rate or linear_reduction_learning_rate:
+                    print(f'Iteration {iter_count} | Average error: {average_error} | Learning rate: {round(self.learning_rate, 4)}')
+                else:
+                    print(f'Iteration {iter_count} | Average error: {average_error}')
+
+            if iter_count % (limit_iter // linear_steps) == 0:
+                self.learning_rate_linear_reduction(original_learning_rate, linear_min, linear_steps)
             if average_error < error_threshold:
                 print("Error under threshold. Ending at ", iter_count)
                 break
@@ -311,31 +347,36 @@ Remember that output count is equal to the number of perceptrons in the last per
 
 
 if __name__ == '__main__':
-
     network = NeuralNetwork(learning_rate=0.3, momentum=0.9)
-    network.setup(4, 3)
-    network.set_perceptrons_per_layer([3, 3, 1])
+    network.setup(2, 3)
+    network.set_perceptrons_per_layer([2, 2, 1])
     # network.setup(2, 3)
     # network.set_perceptrons_per_layer([2, 2, 1])
     network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
     network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
     network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
     network.randomize_weights()
-    network.train_backpropagation('resources\\training\\iris.csv',
-                                  limit_iter=40_000,
-                                  limit_time_sec=None,
-                                  error_threshold=0.00001)
     # network.train_backpropagation('resources\\training\\iris.csv',
-    #                               limit_iter=10000,
+    #                               limit_iter=10_000,
     #                               limit_time_sec=None,
-    #                               error_threshold=1e-5)
-    network.test([4.8,3.4,1.6,0.2]) #1
-    network.test([5.0,3.3,1.4,0.2]) #1
-    network.test([7.0,3.2,4.7,1.4]) #0
-    network.test([5.8,2.7,5.1,1.9]) #0
+    #                               error_threshold=0.00001,
+    #                               decay_learning_rate=True,
+    #                               decay_factor=0.1,
+    #                               epoch_decay_step=7)
+    network.train_backpropagation('resources\\training\\xorgate.csv',
+                                  limit_iter=10_000,
+                                  limit_time_sec=None,
+                                  error_threshold=0.00001,
+                                  linear_reduction_learning_rate=True,
+                                  linear_min=0.0001,
+                                  linear_steps=100)
+    # network.test([4.8, 3.4, 1.6, 0.2], True)  # 1 0 0
+    # network.test([5.0, 3.3, 1.4, 0.2], True)  # 1 0 0
+    # network.test([7.0, 3.2, 4.7, 1.4], True)  # 0 1 0
+    # network.test([5.8, 2.7, 5.1, 1.9], True)  # 0 0 1
 
-    # network.test([0, 0])
-    # network.test([0, 1])
-    # network.test([1, 0])
-    # network.test([1, 1])
+    network.test([0, 0])
+    network.test([0, 1])
+    network.test([1, 0])
+    network.test([1, 1])
 

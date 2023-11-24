@@ -30,8 +30,8 @@ class Layer:
         self.results = ans
 
     def calc_errors(self, data=None) -> None:
-        for child in self.children:
-            child.calc_error(data)
+        for i, child in enumerate(self.children):
+            child.calc_error(i + 1, data)
 
     def get_max_error(self) -> float:
         return max([child.error for child in self.children])

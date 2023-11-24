@@ -118,15 +118,11 @@ class Perceptron:
             return 0
         return max([abs(item - self.previous_weights[-2][i]) for i, item in enumerate(self.previous_weights[-1])])
 
-    def calc_error(self, expected_output=None):
+    def calc_error(self, index, expected_output=None):
         if expected_output is None:
-            self.error = sum([perc.error * perc.weights[i] for i, perc in enumerate(self.right_neightbours)]) * self.get_output_der()
-            if self.error > 0:
-                print("Error is positive")
+            self.error = sum([perc.error * perc.weights[index] for perc in self.right_neightbours]) * self.get_output_der()
             return
         self.error = (expected_output - self.output) * self.get_output_der()
-        if self.error > 0:
-            print("Error is positive")
 
     def validate(self, explicit=False):
         if len(self.weights) != len(self.left_neightbours):
@@ -158,10 +154,10 @@ class Perceptron:
         self.right_neightbours = neighbours
 
     def calc_sum(self) -> float:
-        sum = 0
-        for perc, weight in zip(self.left_neightbours, self.weights):
-            sum += perc.output * weight
-        return round(sum, 10)
+        sum_ = 0
+        for perc, weight in zip(self.left_neightbours, self.__weights):
+            sum_ += perc.output * weight
+        return sum_
 
     def set_id(self, layer: int, position: int) -> None:
         self.__id: str = f'P/{layer}/{position}'
@@ -201,7 +197,7 @@ class Perceptron:
 
     def calc_sigmoid_bipolar_der(self) -> float:
         res = self.calc_sigmoid_bipolar()
-        return 0.5 * (1 + res) * (1 - res)
+        return 0.5 * (1 - res * res)
 
     def calc_relu(self) -> float:
         return max(0, self.calc_sum())
@@ -239,7 +235,7 @@ class Perceptron:
     def calc_softplus_der(self) -> float:
         return 1 / (1 + exp(-self.calc_sum()))
 
-    def get_output(self) -> float | Literal[1, -1, 0]:
+    def get_output(self):
         if self.activation_function == ActivationFunctions.IDENTITY:
             return self.calc_identity()
         elif self.activation_function == ActivationFunctions.RELU:
@@ -261,7 +257,7 @@ class Perceptron:
         else:
             raise ValueError("Could not match activation function")
 
-    def get_output_der(self) -> float | Literal[1, -1, 0]:
+    def get_output_der(self):
         if self.activation_function == ActivationFunctions.IDENTITY:
             return self.calc_identity_der()
         elif self.activation_function == ActivationFunctions.RELU:

@@ -120,7 +120,7 @@ class NeuralNetwork:
     def train_backpropagation(self, csv_path,
                               limit_iter=100,
                               limit_time_sec=10,
-                              error_threshold=0.0001,
+                              error_threshold=0.00001,
                               max_weight_change_threshold=0.0001):
 
         def should_run(end_time, iter_count):
@@ -155,10 +155,11 @@ class NeuralNetwork:
                 layer.calc_errors()
             for layer in self.__perc_layers:
                 layer.update_children_weights()
-            # max_weight_change = max([layer.get_max_weight_change() for layer in self.__perc_layers])
-            # max_error = max([layer.get_max_error() for layer in self.__perc_layers])
-            # if max_error < error_threshold and max_weight_change < max_weight_change_threshold:
-            #     break
+            max_weight_change = max([layer.get_max_weight_change() for layer in self.__perc_layers])
+            max_error = max([layer.get_max_error() for layer in self.__perc_layers])
+            if max_error < error_threshold and max_weight_change < max_weight_change_threshold:
+                print(iter_count)
+                break
 
     def get_perc_layers(self) -> list[Layer]:
         return self.__perc_layers
@@ -305,12 +306,12 @@ if __name__ == '__main__':
     # network.load_network('network.nn')
     network.setup(2, 2)
     network.set_perceptrons_per_layer([2, 1])
-    network.set_layer_activation_function(1, ActivationFunctions.RELU)
-    network.set_layer_activation_function(2, ActivationFunctions.RELU)
-    # network.randomize_weights()
-    network.get_layer_by_index(1).set_children_weights([[1, 1, 1], [1, 1, 1]])
-    network.get_layer_by_index(2).set_children_weights([[1, 1, 1]])
-    # network.get_layer_by_index(1).debug_indepth()
+    network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_BIPOLAR)
+    network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_BIPOLAR)
+    network.randomize_weights()
+    # network.get_layer_by_index(1).set_children_weights([[0.16, 0.05, 0.02], [0.58, -0.46, -0.4]])
+    # network.get_layer_by_index(2).set_children_weights([[-0.9, -0.99, -0.86]])
+    # # network.get_layer_by_index(1).debug_indepth()
     network.train_backpropagation('resources\\training\\xorgate.csv',
                                   limit_iter=10_000,
                                   limit_time_sec=None,
@@ -319,9 +320,9 @@ if __name__ == '__main__':
     network.get_layer_by_index(1).debug_indepth()
     network.get_layer_by_index(2).debug_indepth()
     # network.train_single_perceptron('resources\\training\\xorgate.csv')
-    # network.test([-1, -1])
-    # network.test([-1, 1])
-    # network.test([1, -1])
-    # network.test([1, 1])
+    network.test([-1, -1])
+    network.test([-1, 1])
+    network.test([1, -1])
+    network.test([1, 1])
     # network.test([-1, -1]) 
 

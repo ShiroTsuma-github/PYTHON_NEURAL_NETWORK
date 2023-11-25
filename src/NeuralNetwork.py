@@ -16,10 +16,15 @@ from src.Perceptron import Perceptron                           # noqa: E402
 
 
 class NeuralNetwork:
-    def __init__(self, learning_rate=0.1, momentum=0) -> None:
+    def __init__(self, learning_rate=0.1, momentum=0, step_bipolar_threshold=0,
+                 identity_a=1,
+                 parametric_a=0.1) -> None:
         self.id = 'N/I/?/H/?/P/?/O/?'
         self.learning_rate = learning_rate
         self.momentum = momentum
+        self.step_bipolar_threshold = step_bipolar_threshold
+        self.identity_a = identity_a
+        self.parametric_a = parametric_a
         self.layer_count: int = 0
         self.layers: list[Layer] = []
         self.__perc_layers: list[Layer] = []
@@ -139,8 +144,6 @@ class NeuralNetwork:
 
         def should_run(end_time, iter_count) -> bool:
             if limit_iter is None:
-                # if time.time() < end_time:
-                #     return True
                 if dt.datetime.now() < end_time:
                     return True
                 print("No time")
@@ -151,8 +154,6 @@ class NeuralNetwork:
                 "No iterations"
                 return False
             else:
-                # if iter_count < limit_iter and time.time() < end_time:
-                #     return True
                 if iter_count < limit_iter and dt.datetime.now() < end_time:
                     return True
                 print("No iterations or time")
@@ -161,7 +162,6 @@ class NeuralNetwork:
         original_learning_rate = self.learning_rate
         self.prepare_for_backpropagation()
         data, output = self.__load_csv(csv_path)
-        # end_time = time.time() + 0 if limit_time_sec is None else limit_time_sec
         end_time = dt.datetime.now() + dt.timedelta(seconds=0 if limit_time_sec is None else limit_time_sec)
         iter_count = 0
         while (should_run(end_time, iter_count)):
@@ -309,7 +309,11 @@ Remember that output count is equal to the number of perceptrons in the last per
                 'output-values': self.get_output_values(),
                 'perceptrons_data': perc_dict
             },
-            'learning_rate': self.learning_rate
+            'learning_rate': self.learning_rate,
+            'momentum': self.momentum,
+            'step_bipolar_threshold': self.step_bipolar_threshold,
+            'identity_a': self.identity_a,
+            'parametric_a': self.parametric_a
         }
         json_string = json.dumps(save_dict)
 
@@ -342,21 +346,25 @@ Remember that output count is equal to the number of perceptrons in the last per
             layer.set_children_functions_by_list(func_in_line)
             layer.set_children_weights(weights_in_line)
         self.learning_rate = data.get('learning_rate', 0.1)
+        self.momentum = data.get('momentum', 0)
+        self.step_bipolar_threshold = data.get('step_bipolar_threshold', 0)
+        self.identity_a = data.get('identity_a', 1)
+        self.parametric_a = data.get('parametric_a', 0.1)
 
     def __repr__(self) -> str:
         return self.id
 
 
 if __name__ == '__main__':
-    network = NeuralNetwork(learning_rate=0.3, momentum=0.9)
-    # network.setup(4, 3)
-    # network.set_perceptrons_per_layer([4, 4, 3])
-    # # network.setup(2, 3)
-    # # network.set_perceptrons_per_layer([2, 2, 1])
-    # network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
-    # network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
-    # network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
-    # network.randomize_weights()
+    network = NeuralNetwork(learning_rate=0.1, momentum=0)
+    network.setup(4, 3)
+    network.set_perceptrons_per_layer([4, 4, 3])
+    network.set_layer_activation_function(1, ActivationFunctions.SIGMOID_UNIPOLAR)
+    network.set_layer_activation_function(2, ActivationFunctions.SIGMOID_UNIPOLAR)
+    network.set_layer_activation_function(3, ActivationFunctions.SIGMOID_BIPOLAR)
+    network.randomize_weights()
+        # network.setup(2, 3)
+    # network.set_perceptrons_per_layer([2, 2, 1])
     # # network.train_backpropagation('resources\\training\\iris.csv',
     # #                               limit_iter=10_000,
     # #                               limit_time_sec=None,
@@ -364,15 +372,15 @@ if __name__ == '__main__':
     # #                               decay_learning_rate=True,
     # #                               decay_factor=0.1,
     # #                               epoch_decay_step=7)
-    # network.train_backpropagation('resources\\training\\iris.csv',
-    #                               limit_iter=10_000,
-    #                               limit_time_sec=None,
-    #                               error_threshold=0.005,
-    #                               linear_reduction_learning_rate=True,
-    #                               linear_min=0.0001,
-    #                               linear_steps=100)
+    network.train_backpropagation('resources\\training\\iris.csv',
+                                  limit_iter=10_000,
+                                  limit_time_sec=None,
+                                  error_threshold=0.00005,
+                                  linear_reduction_learning_rate=True,
+                                  linear_min=0.0001,
+                                  linear_steps=100)
     # network.save_network('resources\\networks\\iris.nn')
-    network.load_network('resources\\networks\\iris.nn')
+    # network.load_network('resources\\networks\\iris.nn')
     network.test([4.8, 3.4, 1.6, 0.2], True)  # 1 0 0
     network.test([5.0, 3.3, 1.4, 0.2], True)  # 1 0 0
     network.test([7.0, 3.2, 4.7, 1.4], True)  # 0 1 0

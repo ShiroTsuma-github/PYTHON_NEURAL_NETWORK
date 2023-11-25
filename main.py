@@ -1,4 +1,2 @@
-# jest x itemow na layer i one rownoczesnie moga byc wyliczane z uzyciem multiprocessing
-# walidacja dla roznych sieci czy poprawne wyzwalajace funkcje
-# (te z pochodna dla wielowarstwowych  przy propagacji wstecz)
-# zmiana wag dla jednowarstwowych
+# multiprocessing nie zadziała, ze względu na za duży overhead z tworzeniem procesów przy tak małych obliczeniach
+# OGARNAC SOFTMAX, ZEBY DZIALALO
